@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Agent Editor Pro v2 – Flexible Mejorado</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --md-primary: #6750A4;
+            --md-on-primary: #FFFFFF;
+            --md-primary-container: #EADDFF;
+            --md-on-primary-container: #21005D;
+            --md-surface: #FFFBFE;
+            --md-surface-variant: #E7E0EC;
+            --md-on-surface: #1C1B1F;
+            --md-on-surface-variant: #49454F;
+            --md-outline: #79747E;
+            --md-error: #B3261E;
+            --md-error-container: #F9DEDC;
+            --md-on-error-container: #410E0B;
+            --md-elevation-1: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+            --md-elevation-2: 0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15);
+            --md-elevation-3: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.3);
+            --diff-added: #E6F4EA;
+            --diff-removed: #FDE7E7;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--md-surface);
+            color: var(--md-on-surface);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .app-bar {
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--md-elevation-1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .app-bar h1 { font-size: 1.25rem; font-weight: 500; }
+        .container {
+            flex: 1;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .card {
+            background: var(--md-surface);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--md-elevation-1);
+        }
+        .file-upload-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--md-on-surface-variant);
+            margin-bottom: 8px;
+        }
+        input[type="file"] { display: none; }
+        .file-select-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--md-primary-container);
+            color: var(--md-on-primary-container);
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+        }
+        .file-name {
+            font-size: 0.875rem;
+            color: var(--md-on-surface-variant);
+            word-break: break-all;
+            margin-top: 8px;
+        }
+        textarea {
+            width: 100%;
+            border: 1px solid var(--md-outline);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.875rem;
+            resize: vertical;
+            min-height: 200px;
+            background: var(--md-surface);
+            color: var(--md-on-surface);
+            outline: none;
+        }
+        textarea:focus { border-color: var(--md-primary); border-width: 2px; padding: 11px; }
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        button {
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+            border: none;
+            border-radius: 20px;
+            padding: 10px 24px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            box-shadow: var(--md-elevation-1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button.secondary {
+            background: var(--md-primary-container);
+            color: var(--md-on-primary-container);
+            box-shadow: none;
+        }
+        button.error { background: var(--md-error); color: white; }
+        .log-area {
+            background: var(--md-surface-variant);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--md-on-surface-variant);
+            max-height: 180px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .log-entry { margin-bottom: 4px; }
+        .log-error { color: var(--md-error); font-weight: 500; }
+        .log-success { color: #1B7A2B; font-weight: 500; }
+        .diff-container {
+            margin-top: 12px;
+            border: 1px solid var(--md-outline);
+            border-radius: 8px;
+            overflow: hidden;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            display: none;
+        }
+        .diff-line {
+            padding: 2px 8px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .diff-added { background: var(--diff-added); }
+        .diff-removed { background: var(--diff-removed); }
+        .flex-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0;
+        }
+        .flex-toggle label {
+            font-size: 0.875rem;
+            color: var(--md-on-surface-variant);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-bar">
+        <span>⚙️</span>
+        <h1>Agent Editor Pro v2</h1>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="file-upload-label">Archivo a modificar</div>
+            <input type="file" id="targetFileInput" accept="*/*">
+            <label for="targetFileInput" class="file-select-btn">📂 Seleccionar archivo</label>
+            <div id="targetFileName" class="file-name">No se ha seleccionado archivo</div>
+        </div>
+
+        <div class="card">
+            <div class="file-upload-label">Instrucciones (FILE / SEARCH / REPLACE / END)</div>
+            <textarea id="instructionsArea" placeholder="FILE: &quot;app.py&quot;&#10;SEARCH:&#10;texto a buscar&#10;REPLACE:&#10;nuevo texto&#10;END"></textarea>
+            <div class="flex-toggle">
+                <input type="checkbox" id="flexModeCheckbox" checked>
+                <label for="flexModeCheckbox">🧘 Modo flexible (ignorar TODOS los espacios, saltos de línea y tabulaciones)</label>
+            </div>
+        </div>
+
+        <div class="button-row">
+            <button id="loadInstrBtn" class="secondary">📁 Cargar instrucciones</button>
+            <button id="pasteBtn" class="secondary">📋 Pegar</button>
+            <button id="applyBtn">✅ Aplicar cambios</button>
+            <button id="clearBtn" class="secondary">🧹 Limpiar</button>
+        </div>
+
+        <button id="downloadBtn" class="secondary">⬇️ Descargar archivo editado</button>
+
+        <div class="card" id="diffCard" style="display:none;">
+            <div class="file-upload-label">Vista previa de diferencias</div>
+            <div id="diffContainer" class="diff-container"></div>
+        </div>
+
+        <div class="card">
+            <div class="file-upload-label">Registro</div>
+            <div id="logContainer" class="log-area"></div>
+        </div>
+    </div>
+
+    <input type="file" id="instrFileInput" accept=".txt,.md,text/plain" style="display:none;">
+
+    <script>
+        (function() {
+            const targetFileInput = document.getElementById('targetFileInput');
+            const targetFileNameSpan = document.getElementById('targetFileName');
+            const instructionsArea = document.getElementById('instructionsArea');
+            const logContainer = document.getElementById('logContainer');
+            const applyBtn = document.getElementById('applyBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const loadInstrBtn = document.getElementById('loadInstrBtn');
+            const pasteBtn = document.getElementById('pasteBtn');
+            const instrFileInput = document.getElementById('instrFileInput');
+            const flexModeCheckbox = document.getElementById('flexModeCheckbox');
+            const diffContainer = document.getElementById('diffContainer');
+            const diffCard = document.getElementById('diffCard');
+
+            let targetFileContent = null;
+            let targetFileName = null;
+
+            function log(message, isError = false) {
+                const entry = document.createElement('div');
+                entry.className = 'log-entry' + (isError ? ' log-error' : '');
+                const now = new Date();
+                const time = now.toLocaleTimeString('es-CO', { hour12: false });
+                entry.textContent = `${time} - ${message}`;
+                logContainer.appendChild(entry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+
+            function clearLog() { logContainer.innerHTML = ''; }
+
+            targetFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) {
+                    targetFileNameSpan.textContent = 'No se ha seleccionado archivo';
+                    targetFileContent = null;
+                    targetFileName = null;
+                    return;
+                }
+                targetFileName = file.name;
+                targetFileNameSpan.textContent = targetFileName;
+                try {
+                    targetFileContent = await file.text();
+                    log(`Archivo cargado: ${targetFileName} (${targetFileContent.length} caracteres)`);
+                } catch (err) {
+                    log(`Error al leer el archivo: ${err.message}`, true);
+                    targetFileContent = null;
+                }
+            });
+
+            loadInstrBtn.addEventListener('click', () => instrFileInput.click());
+            instrFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                try {
+                    const text = await file.text();
+                    instructionsArea.value = text;
+                    log(`Instrucciones cargadas desde ${file.name}`);
+                } catch (err) {
+                    log(`Error al cargar instrucciones: ${err.message}`, true);
+                }
+            });
+
+            pasteBtn.addEventListener('click', async () => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    if (text) {
+                        instructionsArea.value = text;
+                        log('Contenido pegado del portapapeles');
+                    } else {
+                        log('El portapapeles está vacío', true);
+                    }
+                } catch (err) {
+                    log('No se pudo acceder al portapapeles. Usa Ctrl+V.', true);
+                }
+            });
+
+            clearBtn.addEventListener('click', () => {
+                instructionsArea.value = '';
+                clearLog();
+                targetFileInput.value = '';
+                targetFileNameSpan.textContent = 'No se ha seleccionado archivo';
+                targetFileContent = null;
+                targetFileName = null;
+                diffContainer.innerHTML = '';
+                diffCard.style.display = 'none';
+                log('Campos limpiados');
+            });
+
+            // Función para eliminar TODOS los caracteres de espacio (espacios, tabs, saltos de línea)
+            function collapseWhitespace(text) {
+                return text.replace(/\s+/g, '');
+            }
+
+            function flexibleSearch(content, search) {
+                const collapsedContent = collapseWhitespace(content);
+                const collapsedSearch = collapseWhitespace(search);
+                const index = collapsedContent.indexOf(collapsedSearch);
+                if (index === -1) return null;
+                // Debemos mapear la posición colapsada al texto original
+                // Recorremos el contenido original para encontrar el inicio y fin reales
+                let origPos = 0;
+                let collapsedPos = 0;
+                // Avanzar hasta la posición de inicio colapsada
+                while (collapsedPos < index && origPos < content.length) {
+                    if (/\s/.test(content[origPos])) {
+                        origPos++;
+                    } else {
+                        origPos++;
+                        collapsedPos++;
+                    }
+                }
+                const startPos = origPos;
+                // Ahora calcular cuánto ocupa la cadena colapsada en el original
+                let searchRemaining = collapsedSearch.length;
+                let endPos = startPos;
+                while (searchRemaining > 0 && endPos < content.length) {
+                    if (/\s/.test(content[endPos])) {
+                        endPos++;
+                    } else {
+                        searchRemaining--;
+                        endPos++;
+                    }
+                }
+                return { start: startPos, end: endPos };
+            }
+
+            function parseInstructions(text) {
+                const blocks = [];
+                const lines = text.split('\n');
+                let i = 0;
+                while (i < lines.length) {
+                    let line = lines[i].trim();
+                    if (line === '' || line.startsWith('#')) {
+                        i++;
+                        continue;
+                    }
+                    if (line.toUpperCase().startsWith('FILE:')) {
+                        const filePart = line.substring(5).trim().replace(/^["']|["']$/g, '');
+                        i++;
+                        let searchLines = [];
+                        let replaceLines = [];
+                        let mode = null;
+                        while (i < lines.length) {
+                            const curLine = lines[i];
+                            const trimmed = curLine.trim();
+                            if (trimmed.toUpperCase() === 'SEARCH:') {
+                                mode = 'search';
+                                i++;
+                                continue;
+                            } else if (trimmed.toUpperCase() === 'REPLACE:') {
+                                mode = 'replace';
+                                i++;
+                                continue;
+                            } else if (trimmed.toUpperCase() === 'END') {
+                                if (searchLines.length > 0 || replaceLines.length > 0) {
+                                    blocks.push({
+                                        file: filePart,
+                                        search: searchLines.join('\n'),
+                                        replace: replaceLines.join('\n')
+                                    });
+                                }
+                                i++;
+                                break;
+                            } else {
+                                if (mode === 'search') searchLines.push(curLine);
+                                else if (mode === 'replace') replaceLines.push(curLine);
+                                i++;
+                            }
+                        }
+                    } else {
+                        i++;
+                    }
+                }
+                return blocks;
+            }
+
+            function generateDiff(original, modified) {
+                const origLines = original.split('\n');
+                const modLines = modified.split('\n');
+                let html = '';
+                const maxLen = Math.max(origLines.length, modLines.length);
+                for (let i = 0; i < maxLen; i++) {
+                    const o = i < origLines.length ? origLines[i] : '';
+                    const m = i < modLines.length ? modLines[i] : '';
+                    if (o === m) {
+                        html += `<div class="diff-line">  ${escapeHtml(o)}</div>`;
+                    } else {
+                        if (o !== '' || m !== '') {
+                            if (o !== '') html += `<div class="diff-line diff-removed">- ${escapeHtml(o)}</div>`;
+                            if (m !== '') html += `<div class="diff-line diff-added">+ ${escapeHtml(m)}</div>`;
+                        }
+                    }
+                }
+                return html;
+            }
+
+            function escapeHtml(text) {
+                return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+
+            applyBtn.addEventListener('click', () => {
+                if (!targetFileContent) {
+                    log('Primero selecciona un archivo para modificar', true);
+                    return;
+                }
+                const instructionsText = instructionsArea.value.trim();
+                if (!instructionsText) {
+                    log('El área de instrucciones está vacía', true);
+                    return;
+                }
+
+                const blocks = parseInstructions(instructionsText);
+                if (blocks.length === 0) {
+                    log('No se encontraron bloques válidos (FILE/SEARCH/REPLACE/END)', true);
+                    return;
+                }
+
+                for (let block of blocks) {
+                    if (block.file && targetFileName && block.file !== targetFileName) {
+                        log(`Advertencia: El archivo en las instrucciones (${block.file}) no coincide con el archivo cargado (${targetFileName}). Se aplicará de todas formas.`, false);
+                        break;
+                    }
+                }
+
+                let modifiedContent = targetFileContent;
+                let appliedCount = 0;
+                const useFlex = flexModeCheckbox.checked;
+
+                for (let block of blocks) {
+                    const searchStr = block.search;
+                    const replaceStr = block.replace;
+
+                    if (useFlex) {
+                        const range = flexibleSearch(modifiedContent, searchStr);
+                        if (range) {
+                            modifiedContent = modifiedContent.substring(0, range.start) + replaceStr + modifiedContent.substring(range.end);
+                            appliedCount++;
+                            log(`Reemplazo flexible exitoso (posiciones ${range.start}-${range.end})`);
+                        } else {
+                            log(`No se encontró coincidencia flexible para el bloque.`, true);
+                        }
+                    } else {
+                        if (modifiedContent.includes(searchStr)) {
+                            modifiedContent = modifiedContent.replace(searchStr, replaceStr);
+                            appliedCount++;
+                            log(`Reemplazo exacto exitoso (${searchStr.length} caracteres buscados)`);
+                        } else {
+                            log(`No se encontró el texto exacto.`, true);
+                        }
+                    }
+                }
+
+                if (appliedCount > 0) {
+                    const diffHtml = generateDiff(targetFileContent, modifiedContent);
+                    diffContainer.innerHTML = diffHtml;
+                    diffCard.style.display = 'block';
+                    targetFileContent = modifiedContent;
+                    log(`✅ Se realizaron ${appliedCount} cambios. Puedes descargar el archivo editado.`);
+                } else {
+                    diffContainer.innerHTML = '';
+                    diffCard.style.display = 'none';
+                    log('⚠️ No se pudo aplicar ninguna modificación.', true);
+                }
+            });
+
+            downloadBtn.addEventListener('click', () => {
+                if (!targetFileContent) {
+                    log('No hay contenido para descargar. Primero carga un archivo y aplica cambios.', true);
+                    return;
+                }
+                const blob = new Blob([targetFileContent], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = targetFileName ? `editado_${targetFileName}` : 'archivo_editado.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                log(`Archivo descargado como ${a.download}`);
+            });
+
+            log('Agent Editor Pro v2 listo. Modo flexible activado por defecto (ignora todos los espacios).');
+        })();
+    </script>
+</body>
+</html>
