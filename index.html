@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Agent Editor Pro v2 – Flexible Mejorado</title>
+    <title>Agent Editor Pro v2.1 – Previsualización</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -174,7 +174,7 @@
 <body>
     <div class="app-bar">
         <span>⚙️</span>
-        <h1>Agent Editor Pro v2</h1>
+        <h1>Agent Editor Pro v2.1</h1>
     </div>
 
     <div class="container">
@@ -201,7 +201,10 @@
             <button id="clearBtn" class="secondary">🧹 Limpiar</button>
         </div>
 
-        <button id="downloadBtn" class="secondary">⬇️ Descargar archivo editado</button>
+        <div class="button-row">
+            <button id="downloadBtn" class="secondary">⬇️ Descargar archivo editado</button>
+            <button id="previewBtn" class="secondary">👁️ Previsualizar</button>
+        </div>
 
         <div class="card" id="diffCard" style="display:none;">
             <div class="file-upload-label">Vista previa de diferencias</div>
@@ -225,6 +228,7 @@
             const applyBtn = document.getElementById('applyBtn');
             const clearBtn = document.getElementById('clearBtn');
             const downloadBtn = document.getElementById('downloadBtn');
+            const previewBtn = document.getElementById('previewBtn');
             const loadInstrBtn = document.getElementById('loadInstrBtn');
             const pasteBtn = document.getElementById('pasteBtn');
             const instrFileInput = document.getElementById('instrFileInput');
@@ -305,7 +309,7 @@
                 log('Campos limpiados');
             });
 
-            // Función para eliminar TODOS los caracteres de espacio (espacios, tabs, saltos de línea)
+            // Elimina todos los caracteres de espacio (incluye saltos de línea)
             function collapseWhitespace(text) {
                 return text.replace(/\s+/g, '');
             }
@@ -315,11 +319,10 @@
                 const collapsedSearch = collapseWhitespace(search);
                 const index = collapsedContent.indexOf(collapsedSearch);
                 if (index === -1) return null;
-                // Debemos mapear la posición colapsada al texto original
-                // Recorremos el contenido original para encontrar el inicio y fin reales
+
+                // Mapear posiciones colapsadas a original
                 let origPos = 0;
                 let collapsedPos = 0;
-                // Avanzar hasta la posición de inicio colapsada
                 while (collapsedPos < index && origPos < content.length) {
                     if (/\s/.test(content[origPos])) {
                         origPos++;
@@ -329,7 +332,6 @@
                     }
                 }
                 const startPos = origPos;
-                // Ahora calcular cuánto ocupa la cadena colapsada en el original
                 let searchRemaining = collapsedSearch.length;
                 let endPos = startPos;
                 while (searchRemaining > 0 && endPos < content.length) {
@@ -473,8 +475,8 @@
                     const diffHtml = generateDiff(targetFileContent, modifiedContent);
                     diffContainer.innerHTML = diffHtml;
                     diffCard.style.display = 'block';
-                    targetFileContent = modifiedContent;
-                    log(`✅ Se realizaron ${appliedCount} cambios. Puedes descargar el archivo editado.`);
+                    targetFileContent = modifiedContent; // actualizar el contenido editado
+                    log(`✅ Se realizaron ${appliedCount} cambios. Puedes descargar o previsualizar.`);
                 } else {
                     diffContainer.innerHTML = '';
                     diffCard.style.display = 'none';
@@ -499,7 +501,23 @@
                 log(`Archivo descargado como ${a.download}`);
             });
 
-            log('Agent Editor Pro v2 listo. Modo flexible activado por defecto (ignora todos los espacios).');
+            // Previsualizar el contenido editado en una nueva pestaña
+            previewBtn.addEventListener('click', () => {
+                if (!targetFileContent) {
+                    log('No hay contenido para previsualizar. Carga un archivo y aplica cambios.', true);
+                    return;
+                }
+                const newWindow = window.open('about:blank', '_blank');
+                if (!newWindow) {
+                    log('No se pudo abrir la ventana de previsualización. Permite las ventanas emergentes.', true);
+                    return;
+                }
+                newWindow.document.write(targetFileContent);
+                newWindow.document.close();
+                log('Previsualización abierta en nueva pestaña.');
+            });
+
+            log('Agent Editor Pro v2.1 listo. Modo flexible activado. Ahora con previsualización.');
         })();
     </script>
 </body>
